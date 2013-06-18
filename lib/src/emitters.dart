@@ -461,9 +461,16 @@ class ComponentCssEmitter extends CssPrinter {
     return false;
   }
 
+  void visitSelectorGroup(SelectorGroup node) {
+    if (_prefixed == null) {
+      emit('[is="$_componentTagName"] ');
+    }
+    super.visitSelectorGroup(node);
+  }
+
   void visitClassSelector(ClassSelector node) {
     if (_prefixed == null) {
-      emit('[is="$_componentTagName"] .${node.name}');
+      super.visitClassSelector(node);
     } else {
       emit('.${_prefixed}_${node.name}');
     }
@@ -478,7 +485,7 @@ class ComponentCssEmitter extends CssPrinter {
 
   void visitIdSelector(IdSelector node) {
     if (_prefixed == null) {
-      emit('[is="$_componentTagName"] #${node.name}');
+      super.visitIdSelector(node);
     } else {
       emit('#${_prefixed}_${node.name}');
     }
@@ -491,6 +498,7 @@ class ComponentCssEmitter extends CssPrinter {
 */
   }
 
+/*
   void visitElementSelector(ElementSelector node) {
     if (_prefixed == null) {
       emit('[is="$_componentTagName"] ${node.name}');
@@ -502,6 +510,7 @@ class ComponentCssEmitter extends CssPrinter {
     super.visitElementSelector(node);
 */
   }
+*/
 }
 
 /**
