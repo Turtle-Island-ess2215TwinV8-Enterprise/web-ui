@@ -58,6 +58,7 @@ class Compiler {
 
   String _mainPath;
   String _resetCssFile;
+  StyleSheet _cssResetStyleSheet;
   PathMapper _pathMapper;
   Messages _messages;
 
@@ -554,13 +555,12 @@ class Compiler {
       _time('Codegen', file.path, () {
         var fileInfo = info[file.path];
         cleanHtmlNodes(fileInfo);
-//        fixupHtmlCss(fileInfo, options);
+        fixupHtmlCss(fileInfo, options, _cssResetStyleSheet != null);
         _emitComponents(fileInfo, pseudoElements);
       });
     }
 
     var entryPoint = files[0];
-var ii = info[entryPoint.path];
     assert(info[entryPoint.path].isEntryPoint);
     _emitMainDart(entryPoint);
     _emitMainHtml(entryPoint, pseudoElements);
@@ -656,12 +656,11 @@ var ii = info[entryPoint.path];
     }
 
     // Get reset file.
-    var cssResetStyleSheet;
     if (_resetCssFile != null) {
       var cssResetFile = files[1];
       if (cssResetFile.isStyleSheet) {
         var cssInfo = info[cssResetFile.path];
-        cssResetStyleSheet = cssInfo.styleSheets[0];
+        _cssResetStyleSheet = cssInfo.styleSheets[0];
       }
     }
 
@@ -687,18 +686,26 @@ var ii = info[entryPoint.path];
                 '   Component ${component.tagName} stylesheet \n'
                 '   ==================================================== */\n');
 
-            if (!component.hasAuthorStyles && cssResetStyleSheet != null) {
-              // If component doesn't have apply-author-styles then we need to
-              // reset the CSS the styles for the component (if css-reset file
-              // option was passed).
-              buff.write('\n/* Start CSS Reset */\n');
-              buff.write(emitComponentStyleSheet(cssResetStyleSheet,
-                  component.tagName, null));
-              buff.write('/* End CSS Reset */\n\n');
+            var tagName = component.tagName;
+            if (!component.hasAuthorStyles) {
+              if (_cssResetStyleSheet != null) {
+                // If component doesn't have apply-author-styles then we need to
+                // reset the CSS the styles for the component (if css-reset file
+                // option was passed).
+                buff.write('\n/* Start CSS Reset */\n');
+                buff.write(emitComponentStyleSheet(_cssResetStyleSheet, tagName,
+                    null));
+                buff.write('/* End CSS Reset */\n\n');
+              } else {
+                // Mangle the names if no reset is specified.
+                buff.write(emitComponentStyleSheet(styleSheet, tagName,
+                    component.scoped ? tagName : null));
+                buff.write('\n\n');
+              }
+            } else {
+              buff.write(emitComponentStyleSheet(styleSheet, tagName, null));
+              buff.write('\n\n');
             }
-            buff.write(emitComponentStyleSheet(styleSheet, component.tagName,
-                component.scoped ? component.tagName : null));
-            buff.write('\n\n');
           }
         }
       }
