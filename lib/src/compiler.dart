@@ -686,6 +686,7 @@ class Compiler {
                 '   Component ${component.tagName} stylesheet \n'
                 '   ==================================================== */\n');
 
+            var cssPolyfill = useCssPolyFill(options, component);
             var tagName = component.tagName;
             if (!component.hasAuthorStyles) {
               if (_cssResetStyleSheet != null) {
@@ -694,16 +695,16 @@ class Compiler {
                 // option was passed).
                 buff.write('\n/* Start CSS Reset */\n');
                 buff.write(emitComponentStyleSheet(_cssResetStyleSheet, tagName,
-                    null));
+                    NO_POLYFILL));
                 buff.write('/* End CSS Reset */\n\n');
               } else {
                 // Mangle the names if no reset is specified.
                 buff.write(emitComponentStyleSheet(styleSheet, tagName,
-                    component.scoped ? tagName : null));
+                    cssPolyfill ? MANGLED_POLYFILL : NO_POLYFILL));
                 buff.write('\n\n');
               }
             } else {
-              buff.write(emitComponentStyleSheet(styleSheet, tagName, null));
+              buff.write(emitComponentStyleSheet(styleSheet, tagName, cssPolyfill ? SCOPED_POLYFILL : NO_POLYFILL));
               buff.write('\n\n');
             }
           }

@@ -44,7 +44,7 @@ main() {
       group(testFile.replaceAll('_test.dart', ':'), testMain);
     }
   }
-
+/*
   addGroup('analyzer_test.dart', analyzer_test.main);
   addGroup('compiler_test.dart', compiler_test.main);
   addGroup('css_test.dart', css_test.main);
@@ -63,9 +63,11 @@ main() {
   // as well for convenient baseline diff/updating.
   renderTests('data/input', 'data/input', 'data/expected', 'data/out');
   exampleTest('../example/component/news');
+*/
   exampleTest('../example/todomvc');
 }
 
 void exampleTest(String path) {
-  renderTests(path, '$path/test', '$path/test/expected', '$path/test/out');
+  renderTests(path, '$path/test', '$path/test/expected', '$path/test/out',
+      ['--no-css']);
 }

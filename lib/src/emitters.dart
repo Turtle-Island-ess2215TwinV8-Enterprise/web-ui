@@ -437,6 +437,10 @@ class CssEmitter extends CssPrinter {
 
 }
 
+const int NO_POLYFILL = 0;
+const int SCOPED_POLYFILL = 1;
+const int MANGLED_POLYFILL = 2;
+
 /**
  * Style sheet polyfill for a component, each CSS class name/id selector
  * referenced (selector) is prepended with prefix_ (if prefix is non-null).  In
@@ -445,16 +449,17 @@ class CssEmitter extends CssPrinter {
  */
 class ComponentCssEmitter extends CssPrinter {
   final String _componentTagName;
-  final String _prefixed;
+  final int _polyfillKind;
 
-  ComponentCssEmitter(this._componentTagName, this._prefixed);
+  ComponentCssEmitter(this._componentTagName, this._polyfillKind);
 
   /**
    * If element selector is the component's tag name, then change selector to
    * find element who's is attribute is the component's name.
    */
   bool _emitComponentElement(var node) {
-    if (node is ElementSelector && _componentTagName == node.name) {
+    if (_polyfillKind == SCOPED_POLYFILL && node is ElementSelector &&
+        _componentTagName == node.name) {
       emit('[is="$_componentTagName"]');
       return true;
     }
@@ -462,40 +467,26 @@ class ComponentCssEmitter extends CssPrinter {
   }
 
   void visitSelectorGroup(SelectorGroup node) {
-    if (_prefixed == null) {
+    if (_polyfillKind == SCOPED_POLYFILL) {
       emit('[is="$_componentTagName"] ');
     }
     super.visitSelectorGroup(node);
   }
 
   void visitClassSelector(ClassSelector node) {
-    if (_prefixed == null) {
-      super.visitClassSelector(node);
+    if (_polyfillKind == MANGLED_POLYFILL) {
+      emit('.${_componentTagName}_${node.name}');
     } else {
-      emit('.${_prefixed}_${node.name}');
-    }
-/*
-    if (_prefixed == null) {
       super.visitClassSelector(node);
-    } else {
-      emit('.${_prefixed}_${node.name}');
     }
-*/
   }
 
   void visitIdSelector(IdSelector node) {
-    if (_prefixed == null) {
-      super.visitIdSelector(node);
+    if (_polyfillKind == MANGLED_POLYFILL) {
+      emit('#${_componentTagName}_${node.name}');
     } else {
-      emit('#${_prefixed}_${node.name}');
-    }
-/*
-    if (_prefixed == null) {
       super.visitIdSelector(node);
-    } else {
-      emit('#${_prefixed}_${node.name}');
     }
-*/
   }
 
 /*
@@ -521,8 +512,8 @@ String emitStyleSheet(StyleSheet ss, FileInfo file) =>
       ..visitTree(ss, pretty: true)).toString();
 
 /** Helper function to emit a component's style tag content. */
-String emitComponentStyleSheet(StyleSheet ss, String tagName, String prefix) =>
-  ((new ComponentCssEmitter(tagName, prefix))
+String emitComponentStyleSheet(StyleSheet ss, String tagName, int polyKind) =>
+  ((new ComponentCssEmitter(tagName, polyKind))
       ..visitTree(ss, pretty: true)).toString();
 
 /** Generates the class corresponding to a single web component. */
@@ -568,7 +559,7 @@ class WebComponentEmitter extends RecursiveEmitter {
         var styleSheet =
             '<style>\n'
             '${emitComponentStyleSheet(info.styleSheets[0], info.tagName,
-                prefix)}'
+                cssPolyfill ? SCOPED_POLYFILL : NO_POLYFILL)}'
             '\n</style>';
         var template = elemInfo.node;
         template.insertBefore(new Element.html(styleSheet),
